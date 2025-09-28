@@ -4,8 +4,11 @@ import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Listbox, Transition } from "@headlessui/react";
-import { Fragment, useState, useMemo } from "react";
-import countryList from "react-select-country-list";
+import { Fragment, useState, useMemo, useEffect } from "react";
+// Fix for TypeScript error
+const countryList = require('react-select-country-list').default;
+import Image from "next/image";
+import Link from "next/link";
 import {
   Users,
   Rocket,
@@ -35,16 +38,24 @@ export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Handle scroll effect for navigation
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // React country list
-  const countries = useMemo(() => countryList().getData(), []);
+  type Country = { label: string; value: string };
+  const countries: Country[] = useMemo(() => countryList().getData(), []);
 
   // Intersection Observer hooks for scroll animations
   const [heroRef, heroInView] = useInView({
-    threshold: 0.3,
-    triggerOnce: true,
-  });
-  const [statsRef, statsInView] = useInView({
     threshold: 0.3,
     triggerOnce: true,
   });
@@ -63,12 +74,6 @@ export default function Home() {
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
-
-  const stats = [
-    { number: "150K", label: "Top talent", subtitle: "highly skilled" },
-    { number: "33%", label: "Faster project", subtitle: "delivery" },
-    { number: "86%", label: "Faster time", subtitle: "to hire" },
-  ];
 
   const testimonials = [
     {
@@ -97,12 +102,12 @@ export default function Home() {
     },
   ];
 
-  const FormComponent = ({ isModal = false }) => (
+  const FormComponent = ({ isModal = false }: { isModal?: boolean }) => (
     <div
       className={`${
         isModal
           ? ""
-          : "bg-white p-8 rounded-2xl shadow-xl border border-gray-100"
+          : "bg-white p-8 shadow-xl border-l-4 border-teal-500"
       }`}
     >
       <div className="space-y-4">
@@ -113,7 +118,7 @@ export default function Home() {
           <div className="relative">
             <input
               type="email"
-              className="w-full p-3 pl-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+              className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
               placeholder="your.email@company.com"
               required
             />
@@ -131,7 +136,7 @@ export default function Home() {
             </label>
             <input
               type="text"
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+              className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
               placeholder="John"
               required
             />
@@ -142,7 +147,7 @@ export default function Home() {
             </label>
             <input
               type="text"
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+              className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
               placeholder="Doe"
               required
             />
@@ -155,7 +160,7 @@ export default function Home() {
           </label>
           <input
             type="text"
-            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+            className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
             placeholder="Your Company"
             required
           />
@@ -167,7 +172,7 @@ export default function Home() {
           </label>
           <input
             type="text"
-            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+            className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
             placeholder="e.g. CTO, Engineering Manager"
             required
           />
@@ -179,7 +184,7 @@ export default function Home() {
           </label>
           <Listbox value={selectedCountry} onChange={setSelectedCountry}>
             <div className="relative">
-              <Listbox.Button className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 text-left flex items-center justify-between bg-white">
+              <Listbox.Button className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none text-left flex items-center justify-between transition-all duration-200">
                 <span
                   className={
                     selectedCountry === "" ? "text-gray-500" : "text-gray-900"
@@ -187,7 +192,7 @@ export default function Home() {
                 >
                   {selectedCountry === ""
                     ? "Select Country"
-                    : countries.find((c) => c.value === selectedCountry)?.label}
+                    : countries.find((c: Country) => c.value === selectedCountry)?.label}
                 </span>
                 <div className="flex items-center space-x-2">
                   <Globe className="text-gray-400" size={18} />
@@ -200,8 +205,8 @@ export default function Home() {
                 leaveFrom="opacity-100"
                 leaveTo="opacity-0"
               >
-                <Listbox.Options className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-                  {countries.map((country) => (
+                <Listbox.Options className="absolute z-50 mt-1 w-full bg-white border border-gray-200 shadow-lg max-h-60 overflow-auto">
+                  {countries.map((country: Country) => (
                     <Listbox.Option
                       key={country.value}
                       value={country.value}
@@ -238,7 +243,7 @@ export default function Home() {
           <div className="relative">
             <input
               type="tel"
-              className="w-full p-3 pl-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+              className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
               placeholder="+1 (555) 123-4567"
               required
             />
@@ -255,7 +260,7 @@ export default function Home() {
           </label>
           <div className="relative">
             <textarea
-              className="w-full p-3 pl-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+              className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
               rows={4}
               placeholder="Do you have a specific goal for the Moducode demo? If there's an area you'd like us to cover, please include those details here so we can be prepared."
               required
@@ -271,7 +276,7 @@ export default function Home() {
           <div className="flex items-center h-5">
             <input
               type="checkbox"
-              className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 focus:ring-2"
+              className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500 focus:ring-2"
               required
             />
           </div>
@@ -293,7 +298,7 @@ export default function Home() {
             boxShadow: "0 10px 25px rgba(20, 184, 166, 0.15)",
           }}
           whileTap={{ scale: 0.98 }}
-          className="w-full bg-teal-500 hover:bg-teal-600 text-white py-4 rounded-lg font-semibold text-lg transition-all duration-200 shadow-lg"
+          className="w-full bg-gradient-to-r from-teal-600 to-green-700 text-white py-4 font-semibold text-lg transition-all duration-200 shadow-lg border-l-4 border-teal-400"
         >
           Submit
         </motion.button>
@@ -303,33 +308,89 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white text-gray-900 font-sans">
-      {/* Simplified Navigation */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
+      {/* Navigation with Logo and Why Moducode Link */}
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-gray-900/95 backdrop-blur-sm shadow-lg' 
+          : 'bg-white/95 backdrop-blur-sm border-b border-gray-100'
+      }`}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="font-bold text-xl">moducode</span>
+          <div className="flex items-center">
+            {/* Conditional logo based on background - much bigger size */}
+            <Link href="/">
+              <Image 
+                src={isScrolled ? "/images/logo-light.png" : "/images/logo-dark.png"} 
+                alt="Moducode Logo" 
+                width={120} 
+                height={120} 
+                className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+              />
+            </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Menu - Always visible on desktop */}
+          <div className="hidden md:flex items-center space-x-8">
+            <a 
+              href="#testimonials" 
+              className={`font-medium text-lg transition-colors duration-200 ${
+                isScrolled ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-teal-600'
+              }`}
+            >
+              Why Moducode?
+            </a>
             <motion.button
               onClick={openModal}
               whileHover={{ scale: 1.05 }}
-              className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg font-medium"
+              className="bg-gradient-to-r from-teal-600 to-green-700 text-white px-6 py-3 font-semibold text-lg border-l-4 border-teal-400"
             >
               Hire Talent
             </motion.button>
           </div>
 
+          {/* Mobile Menu Button - Only visible on mobile */}
           <button
-            className="md:hidden"
+            className={`md:hidden ${isScrolled ? 'text-white' : 'text-gray-900'}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X size={24} /> : <List size={24} />}
           </button>
         </div>
+
+        {/* Mobile Menu - Only visible on mobile when open */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`md:hidden ${isScrolled ? 'bg-gray-800' : 'bg-white'} border-t ${
+                isScrolled ? 'border-gray-700' : 'border-gray-100'
+              }`}
+            >
+              <div className="px-6 py-4 space-y-3">
+                <a 
+                  href="#testimonials" 
+                  className={`block font-medium py-2 text-lg ${
+                    isScrolled ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-teal-600'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Why Moducode?
+                </a>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  className="w-full bg-gradient-to-r from-teal-600 to-green-700 text-white px-6 py-3 font-semibold text-lg border-l-4 border-teal-400"
+                  onClick={() => {
+                    openModal();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Hire Talent
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Modal */}
@@ -346,7 +407,7 @@ export default function Home() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto border-l-4 border-teal-500"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
@@ -364,22 +425,29 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Hero Section - More Boxed and Centered */}
+      {/* Hero Section with Green Gradient Blobs */}
       <section
         ref={heroRef}
-        className="pt-24 pb-20 px-6 bg-gradient-to-b from-gray-50 to-white"
+        className="relative pt-32 pb-20 px-6 overflow-hidden"
       >
-        <div className="max-w-5xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Side - Enhanced Content */}
-            <div className="text-center lg:text-left">
+        {/* Green Gradient Blobs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-teal-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div className="relative max-w-5xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Left Side - Pushed up to align with form */}
+            <div className="text-center lg:text-left flex flex-col justify-start lg:justify-start">
               <motion.h1
                 initial={{ opacity: 0, y: 50 }}
                 animate={
                   heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }
                 }
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="text-6xl lg:text-7xl font-bold mb-8 leading-tight"
+                className="text-6xl lg:text-7xl font-bold mb-4 leading-tight"
               >
                 Build Your Team. Build Your Project.
               </motion.h1>
@@ -392,13 +460,13 @@ export default function Home() {
                 transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
                 className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-6 text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold"
               >
-                <span className="bg-teal-500 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold whitespace-nowrap">
+                <span className="bg-gradient-to-r from-teal-600 to-green-700 text-white px-4 py-2 sm:px-6 sm:py-3 font-semibold whitespace-nowrap border-l-4 border-teal-400">
                   Hire Vetted Software
                 </span>
                 <span className="text-gray-900 px-1">
                   &
                 </span>
-                <span className="bg-green-500 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold whitespace-nowrap">
+                <span className="bg-gradient-to-r from-teal-600 to-green-700 text-white px-4 py-2 sm:px-6 sm:py-3 font-semibold whitespace-nowrap border-l-4 border-teal-400">
                   Data Engineers
                 </span>
               </motion.div>
@@ -409,122 +477,22 @@ export default function Home() {
                   heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }
                 }
                 transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-                className="text-xl text-gray-600 mb-12 leading-relaxed"
+                className="text-xl text-gray-600 leading-relaxed"
               >
                 Experience world-class professionalism and expertise with remote tech talents from Africa.
-Whether you’re scaling a startup or building enterprise-grade solutions, our pre-vetted engineers
+Whether you're scaling a startup or building enterprise-grade solutions, our pre-vetted engineers
 are ready to power your next big project.
-
               </motion.p>
-
-              {/* Stats */}
-              <motion.div
-                ref={statsRef}
-                initial={{ opacity: 0, y: 50 }}
-                animate={
-                  statsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }
-                }
-                transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
-                className="grid grid-cols-3 gap-8 mb-12"
-              >
-                {stats.map((stat, index) => (
-                  <motion.div
-                    key={index}
-                    className="text-left border-l-4 border-teal-500 pl-4"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={
-                      statsInView
-                        ? { scale: 1, opacity: 1 }
-                        : { scale: 0.8, opacity: 0 }
-                    }
-                    transition={{ delay: 0.6 + index * 0.1, duration: 0.6 }}
-                  >
-                    <div className="text-4xl font-bold text-gray-900 mb-1">
-                      {stat.number}
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">
-                      {stat.label}
-                    </div>
-                    <div className="text-sm text-gray-500">{stat.subtitle}</div>
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              {/* Enhanced Badges */}
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={
-                  statsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }
-                }
-                transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
-                className="flex justify-center lg:justify-start space-x-4 mb-8"
-              >
-                {[
-                  { color: "red", text: "Leader", subtext: "Enterprise" },
-                  { color: "purple", text: "Leader", subtext: "EMEA" },
-                  { color: "orange", text: "Leader", subtext: "FALL" },
-                ].map((badge, index) => (
-                  <motion.div
-                    key={index}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    className="text-center"
-                  >
-                    <div
-                      className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-2 ${
-                        badge.color === "red"
-                          ? "bg-red-100"
-                          : badge.color === "purple"
-                          ? "bg-purple-100"
-                          : "bg-orange-100"
-                      }`}
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          badge.color === "red"
-                            ? "bg-red-500"
-                            : badge.color === "purple"
-                            ? "bg-purple-500"
-                            : "bg-orange-500"
-                        }`}
-                      >
-                        <CheckCircle className="text-white" size={16} />
-                      </div>
-                    </div>
-                    <div
-                      className={`text-xs font-bold ${
-                        badge.color === "red"
-                          ? "text-red-800"
-                          : badge.color === "purple"
-                          ? "text-purple-800"
-                          : "text-orange-800"
-                      }`}
-                    >
-                      {badge.text}
-                    </div>
-                    <div
-                      className={`text-xs px-2 py-1 rounded-full mt-1 ${
-                        badge.color === "red"
-                          ? "bg-red-500 text-white"
-                          : badge.color === "purple"
-                          ? "bg-purple-500 text-white"
-                          : "bg-orange-500 text-white"
-                      }`}
-                    >
-                      {badge.subtext}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
             </div>
-
-            {/* Right Side - Form More Centered */}
+            
+            {/* Right Side - Form */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={
                 heroInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }
               }
               transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-              className="flex justify-center"
+              className="flex justify-start"
             >
               <div className="w-full max-w-md">
                 <FormComponent />
@@ -535,7 +503,11 @@ are ready to power your next big project.
       </section>
 
       {/* Testimonials Section */}
-      <section ref={testimonialsRef} className="py-20 px-6 bg-gray-50">
+      <section 
+        ref={testimonialsRef} 
+        id="testimonials"
+        className="py-20 px-6 bg-gray-50"
+      >
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -582,7 +554,7 @@ are ready to power your next big project.
                   ease: "easeOut",
                 }}
                 whileHover={{ y: -8, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300"
+                className="bg-white p-6 shadow-sm border-l-4 border-teal-500 hover:shadow-lg transition-all duration-300"
               >
                 <div className="flex space-x-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
@@ -633,27 +605,35 @@ are ready to power your next big project.
                 icon: Article,
                 title: "Fill Form",
                 desc: "Complete our detailed requirements form",
-                color: "from-blue-400 to-blue-600",
+                color: "from-gray-800 to-black",
+                bgColor: "bg-black",
+                iconColor: "text-white",
               },
               {
                 icon: Phone,
                 title: "Book a Call",
                 desc: "Schedule a consultation with our team",
-                color: "from-green-400 to-green-600",
+                color: "from-gray-900 to-black",
+                bgColor: "bg-gray-900",
+                iconColor: "text-white",
               },
               {
                 icon: Users,
                 title: "Lock Talent",
                 desc: "Select from pre-vetted candidates",
-                color: "from-purple-400 to-purple-600",
+                color: "from-teal-600 to-teal-700",
+                bgColor: "bg-teal-700",
+                iconColor: "text-white",
               },
               {
                 icon: Headphones,
                 title: "Meet Manager",
                 desc: "Get dedicated support throughout",
-                color: "from-orange-400 to-orange-600",
+                color: "from-green-600 to-green-700",
+                bgColor: "bg-green-700",
+                iconColor: "text-white",
               },
-            ].map(({ icon: Icon, title, desc, color }, i) => (
+            ].map(({ icon: Icon, title, desc, color, bgColor, iconColor }, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -663,20 +643,20 @@ are ready to power your next big project.
                     : { opacity: 0, y: 50, scale: 0.9 }
                 }
                 transition={{ delay: i * 0.2, duration: 0.6, ease: "easeOut" }}
-                whileHover={{ y: -10, scale: 1.05 }}
-                className="text-center p-8 rounded-2xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50 border border-gray-100"
+                whileHover={{ y: -10, scale: 1.02 }}
+                className="text-center p-8 hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-gray-50 to-white border-l-4 border-teal-500"
               >
                 <motion.div
-                  className={`bg-gradient-to-br ${color} w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
+                  className={`bg-gradient-to-br ${color} w-24 h-24 flex items-center justify-center mx-auto mb-6`}
                   whileHover={{ rotate: 5, scale: 1.1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Icon size={36} className="text-white" />
+                  <Icon size={40} className={iconColor} />
                 </motion.div>
                 <h3 className="font-bold text-xl mb-3">{title}</h3>
                 <p className="text-gray-600 leading-relaxed">{desc}</p>
 
-                <div className="mt-6 w-8 h-8 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto font-bold text-sm">
+                <div className="mt-6 w-10 h-10 bg-gray-800 text-white flex items-center justify-center mx-auto font-bold text-lg">
                   {i + 1}
                 </div>
               </motion.div>
@@ -697,7 +677,7 @@ are ready to power your next big project.
                 boxShadow: "0 20px 40px rgba(20, 184, 166, 0.2)",
               }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:from-teal-600 hover:to-teal-700 transition-all duration-300"
+              className="bg-gradient-to-r from-teal-600 to-green-700 text-white px-8 py-4 font-semibold text-lg shadow-lg border-l-4 border-teal-400"
               onClick={openModal}
             >
               Get Started Today
@@ -707,95 +687,71 @@ are ready to power your next big project.
         </div>
       </section>
 
-      {/* Updated Footer */}
+      {/* Footer */}
       <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white py-16 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <motion.div
-              className="flex items-center justify-center space-x-2 mb-6"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
-              </div>
-              <span className="font-bold text-2xl">moducode</span>
-            </motion.div>
+            <div className="flex items-center justify-center mb-6">
+              {/* Light logo for dark background - bigger size */}
+              <Link href="/">
+                <Image 
+                  src="/images/logo-light.png" 
+                  alt="Moducode Logo" 
+                  width={120} 
+                  height={120} 
+                  className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                />
+              </Link>
+            </div>
 
-            <motion.div
-              className="text-gray-300 leading-relaxed space-y-2 mb-8"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
+            <div className="text-gray-300 leading-relaxed space-y-2 mb-8">
               <p className="text-lg">Moducode Web App…Loading…</p>
               <p className="text-xl font-semibold">
                 Africa&apos;s Digital Campus…Coming soon…
               </p>
-            </motion.div>
+            </div>
 
             {/* Social Media */}
-            <motion.div
-              className="flex justify-center space-x-4 mb-8"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
+            <div className="flex justify-center space-x-4 mb-8">
               {[
                 {
                   icon: FacebookLogo,
                   hover: "hover:bg-blue-600",
-                  name: "Facebook",
                 },
                 {
                   icon: TwitterLogo,
                   hover: "hover:bg-blue-400",
-                  name: "Twitter",
                 },
                 {
                   icon: LinkedinLogo,
                   hover: "hover:bg-blue-700",
-                  name: "LinkedIn",
                 },
                 {
                   icon: GithubLogo,
                   hover: "hover:bg-gray-700",
-                  name: "GitHub",
                 },
                 {
                   icon: InstagramLogo,
                   hover: "hover:bg-pink-600",
-                  name: "Instagram",
                 },
                 {
                   icon: YoutubeLogo,
                   hover: "hover:bg-red-600",
-                  name: "YouTube",
                 },
-              ].map(({ icon: Icon, hover, name }, index) => (
+              ].map(({ icon: Icon, hover }, index) => (
                 <motion.div
                   key={index}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`w-12 h-12 bg-gray-800 ${hover} rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300`}
+                  className={`w-12 h-12 bg-gray-800 ${hover} flex items-center justify-center cursor-pointer transition-all duration-300`}
                 >
                   <Icon size={24} />
                 </motion.div>
               ))}
-            </motion.div>
+            </div>
 
             {/* Contact Info */}
-            <motion.div
-              className="text-gray-400 text-sm space-y-2"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-            >
+            <div className="text-gray-400 text-sm space-y-2">
               <div className="flex items-center justify-center space-x-2">
                 <EnvelopeSimple size={16} />
                 <span>contact@moducode.com</span>
@@ -804,21 +760,42 @@ are ready to power your next big project.
                 <MapPin size={16} />
                 <span>Global Remote Team</span>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Copyright */}
-          <motion.div
-            className="border-t border-gray-700 pt-8 text-center text-gray-400 text-sm"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
+          <div className="border-t border-gray-700 pt-8 text-center text-gray-400 text-sm">
             <p>&copy; 2024 Moducode. All rights reserved.</p>
-          </motion.div>
+          </div>
         </div>
       </footer>
+
+      {/* Blob Animation Styles */}
+      <style jsx global>{`
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </main>
   );
 }
