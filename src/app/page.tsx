@@ -467,7 +467,7 @@ export default function Home() {
                 className="text-xl text-gray-600 leading-relaxed"
               >
                 Experience world-class professionalism and expertise with remote tech talents from Africa.
-Whether you're scaling a startup or building enterprise-grade solutions, our pre-vetted engineers
+Whether you&apos;re scaling a startup or building enterprise-grade solutions, our pre-vetted engineers
 are ready to power your next big project.
               </motion.p>
             </div>
