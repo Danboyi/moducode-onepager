@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Listbox, Transition } from "@headlessui/react";
 import { Fragment, useState, useMemo, useEffect } from "react";
-// Fixed import for TypeScript error
-const countryList = require('react-select-country-list').default;
+import countryList from 'react-select-country-list';
 import Image from "next/image";
 import Link from "next/link";
 import {
