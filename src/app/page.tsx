@@ -76,28 +76,16 @@ export default function Home() {
 
   const testimonials = [
     {
-      name: "Sarah K.",
-      role: "CTO at TechFlow",
+      name: "Aggie B.",
+      role: "Founder, Patherra",
       rating: 5,
-      text: "Exceptional partner with world-class talent. The engineers from Moducode have been instrumental in scaling our platform.",
+      text: "Amazing work with Moducode, the commitment was super amazing*\n\nThe engineers from Moducode brought my visoon to live. It's amazing seeing how they built my platform much more than how I even expected.",
     },
     {
-      name: "James R.",
-      role: "Head of Engineering",
+      name: "L. Odunowo.",
+      role: "Procapitos Group",
       rating: 5,
-      text: "Working with Moducode is great. They understand our needs and deliver quality solutions consistently.",
-    },
-    {
-      name: "Peters B.",
-      role: "Product Manager",
-      rating: 5,
-      text: "Great experience with Moducode! The way they help people realize their potential while building world-class products is amazing.",
-    },
-    {
-      name: "Karl F.",
-      role: "Startup Founder",
-      rating: 5,
-      text: "Moducode engineers are a valuable part of our team. Their technical expertise and dedication make all the difference.",
+      text: "I respect the level of professionalism\n\nThe development was on time and on point. Well done Moducode.",
     },
   ];
 
@@ -261,7 +249,7 @@ export default function Home() {
             <textarea
               className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
               rows={4}
-              placeholder="Do you have a specific goal for the Moducode demo? If there's an area you'd like us to cover, please include those details here so we can be prepared."
+              placeholder="Briefly tell us what you have in mind"
               required
             />
             <ChatCircle
@@ -299,7 +287,7 @@ export default function Home() {
           whileTap={{ scale: 0.98 }}
           className="w-full bg-gradient-to-r from-teal-600 to-green-700 text-white py-4 font-semibold text-lg transition-all duration-200 shadow-lg border-l-4 border-teal-400"
         >
-          Submit
+          Book a Call
         </motion.button>
       </div>
     </div>
@@ -318,10 +306,10 @@ export default function Home() {
             {/* Conditional logo based on background - much bigger size */}
             <Link href="/">
               <Image 
-                src={isScrolled ? "/images/logo-light.png" : "/images/logo-dark.png"} 
+                src={isScrolled ? "/images/logo-dark.png" : "/images/logo-light.png"} 
                 alt="Moducode Logo" 
-                width={120} 
-                height={120} 
+                width={150} 
+                height={150} 
                 className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
               />
             </Link>
@@ -520,7 +508,7 @@ are ready to power your next big project.
               Don&apos;t take our word for it
             </h2>
             <p className="text-xl text-gray-600">
-              See what clients say about Moducode on G2
+              See what clients say about Moducode
             </p>
             <div className="flex items-center justify-center mt-4 space-x-2">
               <div className="flex space-x-1">
@@ -537,7 +525,7 @@ are ready to power your next big project.
             </div>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
@@ -565,19 +553,11 @@ are ready to power your next big project.
                     />
                   ))}
                 </div>
-                <h4 className="font-bold mb-2">
-                  &quot;{testimonial.text.split(".")[0]}.&quot;
-                </h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  {testimonial.text.split(".").slice(1).join(".")}
-                </p>
+                <h4 className="font-bold mb-2 whitespace-pre-line">{testimonial.text.split("\n")[0]}</h4>
+                <p className="text-sm text-gray-600 mb-4 whitespace-pre-line">{testimonial.text.split("\n").slice(1).join("\n")}</p>
                 <div className="border-t pt-4">
                   <p className="font-medium text-sm">{testimonial.name}</p>
                   <p className="text-xs text-gray-500">{testimonial.role}</p>
-                  <button className="text-teal-600 text-sm mt-2 hover:underline flex items-center space-x-1">
-                    <span>Read More</span>
-                    <ArrowRight size={12} />
-                  </button>
                 </div>
               </motion.div>
             ))}
@@ -589,50 +569,42 @@ are ready to power your next big project.
       <section ref={processRef} className="py-20 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <motion.h2
-            className="text-4xl font-bold text-center mb-16"
+            className="text-4xl font-bold text-center mb-6"
             initial={{ opacity: 0, y: 30 }}
             animate={
               processInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }
             }
             transition={{ duration: 0.8 }}
           >
-            Your Talent Pipeline
+            Hire Africa’s Top Tech Talent in 3 Steps.
           </motion.h2>
-          <div className="grid md:grid-cols-4 gap-8">
+          <p className="text-center text-lg text-gray-600 mb-12">
+            We handle recruitment, vetting, and management so you can focus on results.
+          </p>
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              {
-                icon: Article,
-                title: "Fill Form",
-                desc: "Complete our detailed requirements form",
-                color: "from-gray-800 to-black",
-                bgColor: "bg-black",
-                iconColor: "text-white",
-              },
               {
                 icon: Phone,
                 title: "Book a Call",
-                desc: "Schedule a consultation with our team",
+                desc: "Talk to our team about your project.",
                 color: "from-gray-900 to-black",
-                bgColor: "bg-gray-900",
                 iconColor: "text-white",
               },
               {
                 icon: Users,
-                title: "Lock Talent",
-                desc: "Select from pre-vetted candidates",
+                title: "Get Talent",
+                desc: "We match you with pre-vetted engineers.",
                 color: "from-teal-600 to-teal-700",
-                bgColor: "bg-teal-700",
                 iconColor: "text-white",
               },
               {
                 icon: Headphones,
-                title: "Meet Manager",
-                desc: "Get dedicated support throughout",
+                title: "Start Work",
+                desc: "Talent starts immediately with our management support.",
                 color: "from-green-600 to-green-700",
-                bgColor: "bg-green-700",
                 iconColor: "text-white",
               },
-            ].map(({ icon: Icon, title, desc, color, bgColor, iconColor }, i) => (
+            ].map(({ icon: Icon, title, desc, color, iconColor }, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -654,14 +626,12 @@ are ready to power your next big project.
                 </motion.div>
                 <h3 className="font-bold text-xl mb-3">{title}</h3>
                 <p className="text-gray-600 leading-relaxed">{desc}</p>
-
                 <div className="mt-6 w-10 h-10 bg-gray-800 text-white flex items-center justify-center mx-auto font-bold text-lg">
                   {i + 1}
                 </div>
               </motion.div>
             ))}
           </div>
-
           <motion.div
             className="text-center mt-16"
             initial={{ opacity: 0, y: 30 }}
@@ -679,7 +649,7 @@ are ready to power your next big project.
               className="bg-gradient-to-r from-teal-600 to-green-700 text-white px-8 py-4 font-semibold text-lg shadow-lg border-l-4 border-teal-400"
               onClick={openModal}
             >
-              Get Started Today
+              Book a Call
               <ArrowRight className="inline ml-2" size={20} />
             </motion.button>
           </motion.div>
@@ -694,10 +664,10 @@ are ready to power your next big project.
               {/* Light logo for dark background - bigger size */}
               <Link href="/">
                 <Image 
-                  src="/images/logo-light.png" 
+                  src="/images/logo-dark.png" 
                   alt="Moducode Logo" 
-                  width={120} 
-                  height={120} 
+                  width={150} 
+                  height={150} 
                   className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                 />
               </Link>
