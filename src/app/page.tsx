@@ -48,6 +48,14 @@ export default function Home() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    try {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
 
   // Handle scroll effect for navigation
   useEffect(() => {
@@ -59,15 +67,24 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Keep theme state in sync with system preference
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => setTheme(mq.matches ? 'dark' : 'light');
+    try { mq.addEventListener('change', onChange); } catch { /* ignore legacy */ }
+    setTheme(mq.matches ? 'dark' : 'light');
+    return () => { try { mq.removeEventListener('change', onChange); } catch {} };
+  }, []);
+
   // JS fallback to explicitly toggle which logo is visible. This helps on mobile
   // More robust logo chooser: compute the navbar's effective background color and
   // choose the logo by luminance. This handles complex backgrounds and mobile
   // blending where prefers-color-scheme alone isn't enough.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const darkLogo = document.querySelector('.logo-dark') as HTMLImageElement | null;
-    const lightLogo = document.querySelector('.logo-light') as HTMLImageElement | null;
-    if (!darkLogo || !lightLogo) return;
+  if (typeof window === 'undefined') return;
+  const nav = document.querySelector('nav') as HTMLElement | null;
+  if (!nav) return;
 
     const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
@@ -108,40 +125,31 @@ export default function Home() {
     };
 
     const applyByBg = () => {
-      // First prefer scrolled override: when nav is scrolled the header background
-      // is dark, so show the white-text logo (.logo-dark) for contrast.
+      // Decide whether we need the dark-logo (white text) -- true when nav
+      // background is dark OR when scrolled. Otherwise use light-logo (dark text).
+      let needDarkLogo = false;
       if (isScrolled) {
-        darkLogo.style.display = 'inline-block';
-        lightLogo.style.display = 'none';
-        return;
-      }
-
-      const bg = getNavBgColor();
-      if (bg) {
-        const rgb = parseRgb(bg);
-        if (rgb) {
-          const l = luminance(rgb.r, rgb.g, rgb.b);
-          // threshold: dark backgrounds have luminance < 0.5 (tunable)
-          const bgIsDark = l < 0.5;
-          if (bgIsDark) {
-            darkLogo.style.display = 'inline-block';
-            lightLogo.style.display = 'none';
-            return;
+        needDarkLogo = true;
+      } else {
+        const bg = getNavBgColor();
+        if (bg) {
+          const rgb = parseRgb(bg);
+          if (rgb) {
+            const l = luminance(rgb.r, rgb.g, rgb.b);
+            needDarkLogo = l < 0.5;
           }
-          darkLogo.style.display = 'none';
-          lightLogo.style.display = 'inline-block';
-          return;
+        } else {
+          // fallback to prefers-color-scheme
+          needDarkLogo = mq ? mq.matches : false;
         }
       }
 
-      // Fallback to prefers-color-scheme if we couldn't compute a bg color
-      const prefersDark = mq ? mq.matches : false;
-      if (prefersDark) {
-        darkLogo.style.display = 'inline-block';
-        lightLogo.style.display = 'none';
+      if (needDarkLogo) {
+        nav.classList.add('force-dark-logo');
+        nav.classList.remove('force-light-logo');
       } else {
-        darkLogo.style.display = 'none';
-        lightLogo.style.display = 'inline-block';
+        nav.classList.add('force-light-logo');
+        nav.classList.remove('force-dark-logo');
       }
     };
 
@@ -153,7 +161,7 @@ export default function Home() {
 
     const onChange = () => applyByBg();
     if (mq) {
-      try { mq.addEventListener('change', onChange); } catch { /* legacy fallback not needed here */ }
+      try { mq.addEventListener('change', onChange); } catch {}
     }
 
     return () => {
@@ -380,7 +388,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white text-gray-900 font-sans">
       {/* Navigation with Logo and Why Moducode Link */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 theme-${theme} ${
         isScrolled 
           ? 'bg-gray-900/95 backdrop-blur-sm shadow-lg scrolled' 
           : 'bg-white/95 backdrop-blur-sm border-b border-gray-100'

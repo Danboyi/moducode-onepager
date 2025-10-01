@@ -48,3 +48,17 @@ body {
 /* When navbar is scrolled we ensure dark background; show white-text logo (.logo-dark) for contrast */
 nav.scrolled .logo-dark { display: inline-block !important; }
 nav.scrolled .logo-light { display: none !important; }
+
+/* Prefer theme classes (set by JS) when available */
+nav.theme-dark .logo-dark { display: inline-block !important; }
+nav.theme-dark .logo-light { display: none !important; }
+
+nav.theme-light .logo-light { display: inline-block !important; }
+nav.theme-light .logo-dark { display: none !important; }
+
+/* classes added by JS to force a specific logo regardless of other rules */
+nav.force-dark-logo .logo-dark { display: inline-block !important; }
+nav.force-dark-logo .logo-light { display: none !important; }
+
+nav.force-light-logo .logo-light { display: inline-block !important; }
+nav.force-light-logo .logo-dark { display: none !important; }
