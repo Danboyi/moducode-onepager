@@ -79,7 +79,7 @@ export default function Home() {
       name: "Aggie B.",
       role: "Founder, Patherra",
       rating: 5,
-      text: "Amazing work with Moducode, the commitment was super amazing*\n\nThe engineers from Moducode brought my visoon to live. It's amazing seeing how they built my platform much more than how I even expected.",
+      text: "Amazing work with Moducode, the commitment was super amazing\n\nThe engineers from Moducode brought my vision to live. It's amazing seeing how they built my platform much more than how I even expected.",
     },
     {
       name: "L. Odunowo.",
@@ -303,15 +303,18 @@ export default function Home() {
       }`}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center">
-            {/* Conditional logo based on background - much bigger size */}
+            {/* Logo respects system dark mode */}
             <Link href="/">
-              <Image 
-                src={isScrolled ? "/images/logo-dark.png" : "/images/logo-light.png"} 
-                alt="Moducode Logo" 
-                width={150} 
-                height={150} 
-                className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-              />
+              <picture>
+                <source srcSet="/images/logo-light.png" media="(prefers-color-scheme: dark)" />
+                <img
+                  src="/images/logo-dark.png"
+                  alt="Moducode Logo"
+                  width={150}
+                  height={150}
+                  className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                />
+              </picture>
             </Link>
           </div>
 

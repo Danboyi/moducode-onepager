@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Moducode ",
+  title: "Moducode - Hire vetted remote tech talent from Africa",
   description: "Hire vetted remote tech talent from Africa",
 };
 
