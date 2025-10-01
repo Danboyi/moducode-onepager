@@ -59,6 +59,64 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // JS fallback to explicitly toggle which logo is visible. This helps on mobile
+  // where prefers-color-scheme may not align with visible background or when
+  // layout/positioning causes one image to overlap/clip the other.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const darkLogo = document.querySelector('.logo-dark') as HTMLImageElement | null;
+    const lightLogo = document.querySelector('.logo-light') as HTMLImageElement | null;
+    if (!darkLogo || !lightLogo) return;
+
+    const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+    const applyVisibility = () => {
+      // When navbar is scrolled we prefer the light logo for contrast
+      if (isScrolled) {
+        lightLogo.style.display = 'inline-block';
+        darkLogo.style.display = 'none';
+        return;
+      }
+
+      const prefersDark = mq ? mq.matches : false;
+      if (prefersDark) {
+        lightLogo.style.display = 'inline-block';
+        darkLogo.style.display = 'none';
+      } else {
+        lightLogo.style.display = 'none';
+        darkLogo.style.display = 'inline-block';
+      }
+    };
+
+    applyVisibility();
+
+    const onChange = (_ev?: MediaQueryListEvent) => applyVisibility();
+    if (mq) {
+      // Modern browsers
+      try {
+        mq.addEventListener('change', onChange);
+      } catch {
+        // Fallback for older browsers that only support addListener
+        // TypeScript may not have exact types for the legacy API; ignore here.
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (typeof mq.addListener === 'function') mq.addListener(onChange);
+      }
+    }
+
+    return () => {
+      if (mq) {
+        try {
+          mq.removeEventListener('change', onChange);
+        } catch {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          if (typeof mq.removeListener === 'function') mq.removeListener(onChange);
+        }
+      }
+    };
+  }, [isScrolled]);
+
   
 
   // React country list
