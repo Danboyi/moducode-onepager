@@ -35,14 +35,16 @@ body {
 /* Logo visibility helpers: hide or show by default; media queries and scrolled state control visibility */
 /* Ensure logos occupy layout space consistently */
 .logo-light, .logo-dark { display: inline-block; vertical-align: middle; }
-.logo-light { display: none; }
-.logo-dark { display: inline-block; }
+/* Default (light theme): show logo with dark text */
+.logo-light { display: inline-block; }
+.logo-dark { display: none; }
 
 @media (prefers-color-scheme: dark) {
-  .logo-light { display: inline-block; }
-  .logo-dark { display: none; }
+  /* In dark system mode show the white-text logo */
+  .logo-light { display: none; }
+  .logo-dark { display: inline-block; }
 }
 
-/* When navbar is scrolled we ensure dark background; show light logo for contrast */
-nav.scrolled .logo-light { display: inline-block !important; }
-nav.scrolled .logo-dark { display: none !important; }
+/* When navbar is scrolled we ensure dark background; show white-text logo (.logo-dark) for contrast */
+nav.scrolled .logo-dark { display: inline-block !important; }
+nav.scrolled .logo-light { display: none !important; }

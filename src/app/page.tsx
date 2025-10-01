@@ -108,10 +108,11 @@ export default function Home() {
     };
 
     const applyByBg = () => {
-      // First prefer scrolled override
+      // First prefer scrolled override: when nav is scrolled the header background
+      // is dark, so show the white-text logo (.logo-dark) for contrast.
       if (isScrolled) {
-        lightLogo.style.display = 'inline-block';
-        darkLogo.style.display = 'none';
+        darkLogo.style.display = 'inline-block';
+        lightLogo.style.display = 'none';
         return;
       }
 
@@ -123,12 +124,12 @@ export default function Home() {
           // threshold: dark backgrounds have luminance < 0.5 (tunable)
           const bgIsDark = l < 0.5;
           if (bgIsDark) {
-            lightLogo.style.display = 'inline-block';
-            darkLogo.style.display = 'none';
+            darkLogo.style.display = 'inline-block';
+            lightLogo.style.display = 'none';
             return;
           }
-          lightLogo.style.display = 'none';
-          darkLogo.style.display = 'inline-block';
+          darkLogo.style.display = 'none';
+          lightLogo.style.display = 'inline-block';
           return;
         }
       }
@@ -136,11 +137,11 @@ export default function Home() {
       // Fallback to prefers-color-scheme if we couldn't compute a bg color
       const prefersDark = mq ? mq.matches : false;
       if (prefersDark) {
-        lightLogo.style.display = 'inline-block';
-        darkLogo.style.display = 'none';
-      } else {
-        lightLogo.style.display = 'none';
         darkLogo.style.display = 'inline-block';
+        lightLogo.style.display = 'none';
+      } else {
+        darkLogo.style.display = 'none';
+        lightLogo.style.display = 'inline-block';
       }
     };
 
