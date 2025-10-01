@@ -31,7 +31,19 @@ import {
 } from "phosphor-react";
 
 export default function Home() {
-  const { register, handleSubmit, reset } = useForm();
+  type FormPayload = {
+    email: string;
+    firstName: string;
+    lastName: string;
+    company?: string;
+    jobTitle?: string;
+    country?: string;
+    phone?: string;
+    message: string;
+    consent?: boolean;
+  };
+
+  const { register, handleSubmit, reset } = useForm<FormPayload>();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -50,18 +62,6 @@ export default function Home() {
   // React country list
   type Country = { label: string; value: string };
   const countries: Country[] = useMemo(() => countryList().getData(), []);
-
-  type FormPayload = {
-    email: string;
-    firstName: string;
-    lastName: string;
-    company?: string;
-    jobTitle?: string;
-    country?: string;
-    phone?: string;
-    message: string;
-    consent?: boolean;
-  };
 
   // Intersection Observer hooks for scroll animations
   const [heroRef, heroInView] = useInView({
@@ -650,41 +650,24 @@ are ready to power your next big project.
 
             {/* Social Media */}
             <div className="flex justify-center space-x-4 mb-8">
-              {[
-                {
-                  icon: FacebookLogo,
-                  hover: "hover:bg-blue-600",
-                },
-                {
-                  icon: TwitterLogo,
-                  hover: "hover:bg-blue-400",
-                },
-                {
-                  icon: LinkedinLogo,
-                  hover: "hover:bg-blue-700",
-                },
-                {
-                  icon: GithubLogo,
-                  hover: "hover:bg-gray-700",
-                },
-                {
-                  icon: InstagramLogo,
-                  hover: "hover:bg-pink-600",
-                },
-                {
-                  icon: YoutubeLogo,
-                  hover: "hover:bg-red-600",
-                },
-              ].map(({ icon: Icon, hover }, index) => (
-                <motion.div
-                  key={index}
-                  whileHover={{ scale: 1.1, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`w-12 h-12 bg-gray-800 ${hover} flex items-center justify-center cursor-pointer transition-all duration-300`}
-                >
-                  <Icon size={24} />
-                </motion.div>
-              ))}
+              <a href="https://www.linkedin.com/company/moducode/" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-800 hover:bg-blue-700 flex items-center justify-center transition-all duration-300 rounded">
+                <LinkedinLogo size={24} />
+              </a>
+              <a href="https://www.instagram.com/joinmoducode?igsh=MWF4M3Jmc2swNTN1Zw==" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-800 hover:bg-pink-600 flex items-center justify-center transition-all duration-300 rounded">
+                <InstagramLogo size={24} />
+              </a>
+              <a href="#" className="w-12 h-12 bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-all duration-300 rounded">
+                <FacebookLogo size={24} />
+              </a>
+              <a href="#" className="w-12 h-12 bg-gray-800 hover:bg-blue-400 flex items-center justify-center transition-all duration-300 rounded">
+                <TwitterLogo size={24} />
+              </a>
+              <a href="#" className="w-12 h-12 bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-all duration-300 rounded">
+                <GithubLogo size={24} />
+              </a>
+              <a href="#" className="w-12 h-12 bg-gray-800 hover:bg-red-600 flex items-center justify-center transition-all duration-300 rounded">
+                <YoutubeLogo size={24} />
+              </a>
             </div>
 
             {/* Contact Info */}
@@ -702,7 +685,7 @@ are ready to power your next big project.
 
           {/* Copyright */}
           <div className="border-t border-gray-700 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; 2024 Moducode. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Moducode. All rights reserved.</p>
           </div>
         </div>
       </footer>
