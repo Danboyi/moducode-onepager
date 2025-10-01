@@ -43,9 +43,7 @@ export default function Home() {
     consent?: boolean;
   };
 
-  const { register, handleSubmit, reset } = useForm<FormPayload>();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -237,7 +235,10 @@ export default function Home() {
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
 
   const FormComponent = ({ isModal = false }: { isModal?: boolean }) => {
-  const onSubmitForm = async (data: FormPayload) => {
+    const { register, handleSubmit, reset } = useForm<FormPayload>();
+    const [selectedCountry, setSelectedCountry] = useState("");
+
+    const onSubmitForm = async (data: FormPayload) => {
       setSubmitting(true);
       setSubmitResult(null);
       try {
