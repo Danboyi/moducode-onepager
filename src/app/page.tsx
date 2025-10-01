@@ -60,8 +60,9 @@ export default function Home() {
   }, []);
 
   // JS fallback to explicitly toggle which logo is visible. This helps on mobile
-  // where prefers-color-scheme may not align with visible background or when
-  // layout/positioning causes one image to overlap/clip the other.
+  // More robust logo chooser: compute the navbar's effective background color and
+  // choose the logo by luminance. This handles complex backgrounds and mobile
+  // blending where prefers-color-scheme alone isn't enough.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const darkLogo = document.querySelector('.logo-dark') as HTMLImageElement | null;
@@ -70,14 +71,69 @@ export default function Home() {
 
     const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
-    const applyVisibility = () => {
-      // When navbar is scrolled we prefer the light logo for contrast
+    const parseRgb = (s: string) => {
+      // Accept formats: rgb(r,g,b), rgba(r,g,b,a), #rrggbb, #rgb
+      s = s.trim();
+      if (s.startsWith('rgb')) {
+        const parts = s.replace(/rgba?\(/, '').replace(/\)/, '').split(',').map(p => parseFloat(p));
+        return { r: parts[0], g: parts[1], b: parts[2], a: parts[3] ?? 1 };
+      }
+      if (s.startsWith('#')) {
+        let hex = s.slice(1);
+        if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+        const num = parseInt(hex, 16);
+        return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255, a: 1 };
+      }
+      return null;
+    };
+
+    const luminance = (r: number, g: number, b: number) => {
+      const a = [r, g, b].map(v => {
+        v = v / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+    };
+
+    const getNavBgColor = () => {
+      const nav = document.querySelector('nav') as HTMLElement | null;
+      if (!nav) return null;
+      const cs = window.getComputedStyle(nav);
+      let bg = cs.backgroundColor || cs.background || '';
+      if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') {
+        const bodyCs = window.getComputedStyle(document.body);
+        bg = bodyCs.backgroundColor || bodyCs.background || '';
+      }
+      return bg || null;
+    };
+
+    const applyByBg = () => {
+      // First prefer scrolled override
       if (isScrolled) {
         lightLogo.style.display = 'inline-block';
         darkLogo.style.display = 'none';
         return;
       }
 
+      const bg = getNavBgColor();
+      if (bg) {
+        const rgb = parseRgb(bg);
+        if (rgb) {
+          const l = luminance(rgb.r, rgb.g, rgb.b);
+          // threshold: dark backgrounds have luminance < 0.5 (tunable)
+          const bgIsDark = l < 0.5;
+          if (bgIsDark) {
+            lightLogo.style.display = 'inline-block';
+            darkLogo.style.display = 'none';
+            return;
+          }
+          lightLogo.style.display = 'none';
+          darkLogo.style.display = 'inline-block';
+          return;
+        }
+      }
+
+      // Fallback to prefers-color-scheme if we couldn't compute a bg color
       const prefersDark = mq ? mq.matches : false;
       if (prefersDark) {
         lightLogo.style.display = 'inline-block';
@@ -88,31 +144,22 @@ export default function Home() {
       }
     };
 
-    applyVisibility();
+    applyByBg();
 
-    const onChange = (_ev?: MediaQueryListEvent) => applyVisibility();
+    const onResizeOrScroll = () => applyByBg();
+    window.addEventListener('resize', onResizeOrScroll);
+    window.addEventListener('scroll', onResizeOrScroll);
+
+    const onChange = () => applyByBg();
     if (mq) {
-      // Modern browsers
-      try {
-        mq.addEventListener('change', onChange);
-      } catch {
-        // Fallback for older browsers that only support addListener
-        // TypeScript may not have exact types for the legacy API; ignore here.
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        if (typeof mq.addListener === 'function') mq.addListener(onChange);
-      }
+      try { mq.addEventListener('change', onChange); } catch { /* legacy fallback not needed here */ }
     }
 
     return () => {
+      window.removeEventListener('resize', onResizeOrScroll);
+      window.removeEventListener('scroll', onResizeOrScroll);
       if (mq) {
-        try {
-          mq.removeEventListener('change', onChange);
-        } catch {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          if (typeof mq.removeListener === 'function') mq.removeListener(onChange);
-        }
+        try { mq.removeEventListener('change', onChange); } catch {}
       }
     };
   }, [isScrolled]);
