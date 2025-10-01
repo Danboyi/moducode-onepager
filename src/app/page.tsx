@@ -10,9 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Users,
-  Rocket,
   Headphones,
-  Article,
   CaretDown,
   Star,
   Globe,
@@ -33,7 +31,7 @@ import {
 } from "phosphor-react";
 
 export default function Home() {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, reset } = useForm();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -53,6 +51,18 @@ export default function Home() {
   type Country = { label: string; value: string };
   const countries: Country[] = useMemo(() => countryList().getData(), []);
 
+  type FormPayload = {
+    email: string;
+    firstName: string;
+    lastName: string;
+    company?: string;
+    jobTitle?: string;
+    country?: string;
+    phone?: string;
+    message: string;
+    consent?: boolean;
+  };
+
   // Intersection Observer hooks for scroll animations
   const [heroRef, heroInView] = useInView({
     threshold: 0.3,
@@ -67,9 +77,7 @@ export default function Home() {
     triggerOnce: true,
   });
 
-  const onSubmit = () => {
-    window.location.href = "https://calendly.com/YOUR-CALENDLY-LINK/30min";
-  };
+  // ...existing code... (calendly redirect removed - form handles submits now)
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
@@ -89,209 +97,166 @@ export default function Home() {
     },
   ];
 
-  const FormComponent = ({ isModal = false }: { isModal?: boolean }) => (
-    <div
-      className={`${
-        isModal
-          ? ""
-          : "bg-white p-8 shadow-xl border-l-4 border-teal-500"
-      }`}
-    >
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            WORK EMAIL *
-          </label>
-          <div className="relative">
-            <input
-              type="email"
-              className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
-              placeholder="your.email@company.com"
-              required
-            />
-            <EnvelopeSimple
-              className="absolute left-3 top-3.5 text-gray-400"
-              size={18}
-            />
-          </div>
-        </div>
+  const [submitting, setSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState<null | { ok?: boolean; error?: string }>(null);
+  const [showCalendlyModal, setShowCalendlyModal] = useState(false);
 
-        <div className="grid grid-cols-2 gap-4">
+  const FormComponent = ({ isModal = false }: { isModal?: boolean }) => {
+  const onSubmitForm = async (data: FormPayload) => {
+      setSubmitting(true);
+      setSubmitResult(null);
+      try {
+        const payload: FormPayload = {
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          company: data.company,
+          jobTitle: data.jobTitle,
+          country: selectedCountry || data.country,
+          phone: data.phone,
+          message: data.message,
+        };
+
+        const res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const json = await res.json();
+        if (res.ok) {
+          setSubmitResult({ ok: true });
+          reset();
+          setSelectedCountry('');
+          const calendly = process.env.NEXT_PUBLIC_CALENDLY_LINK || '';
+          if (calendly) {
+            // fire analytics event if available
+            try {
+              const eventData = { category: 'Contact', action: 'submit', label: payload.email, payload };
+              const w = window as unknown as Record<string, unknown>;
+              if (Array.isArray(w['dataLayer'])) {
+                (w['dataLayer'] as unknown[]).push({ event: 'contact_form_submit', ...eventData });
+              }
+              if (typeof w['gtag'] === 'function') {
+                (w['gtag'] as (...args: unknown[]) => void)('event', 'contact_form_submit', eventData);
+              }
+              window.dispatchEvent(new CustomEvent('contact_form_submit', { detail: eventData }));
+            } catch {
+              // ignore analytics errors
+            }
+
+            // show embedded Calendly modal
+            setShowCalendlyModal(true);
+          }
+        } else {
+          setSubmitResult({ error: json.error || 'Failed to send message' });
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setSubmitResult({ error: message || 'Unexpected error' });
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+    return (
+      <form onSubmit={handleSubmit(onSubmitForm)} className={`${isModal ? '' : 'bg-white p-8 shadow-xl border-l-4 border-teal-500'}`}>
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              FIRST NAME *
-            </label>
-            <input
-              type="text"
-              className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
-              placeholder="John"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              LAST NAME *
-            </label>
-            <input
-              type="text"
-              className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
-              placeholder="Doe"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            COMPANY NAME *
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
-            placeholder="Your Company"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            JOB TITLE *
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
-            placeholder="e.g. CTO, Engineering Manager"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            COUNTRY *
-          </label>
-          <Listbox value={selectedCountry} onChange={setSelectedCountry}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">WORK EMAIL *</label>
             <div className="relative">
-              <Listbox.Button className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none text-left flex items-center justify-between transition-all duration-200">
-                <span
-                  className={
-                    selectedCountry === "" ? "text-gray-500" : "text-gray-900"
-                  }
-                >
-                  {selectedCountry === ""
-                    ? "Select Country"
-                    : countries.find((c: Country) => c.value === selectedCountry)?.label}
-                </span>
-                <div className="flex items-center space-x-2">
-                  <Globe className="text-gray-400" size={18} />
-                  <CaretDown className="text-gray-400" size={18} />
-                </div>
-              </Listbox.Button>
-              <Transition
-                as={Fragment}
-                leave="transition ease-in duration-100"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-              >
-                <Listbox.Options className="absolute z-50 mt-1 w-full bg-white border border-gray-200 shadow-lg max-h-60 overflow-auto">
-                  {countries.map((country: Country) => (
-                    <Listbox.Option
-                      key={country.value}
-                      value={country.value}
-                      className={({ active }) =>
-                        `cursor-pointer select-none relative py-3 pl-4 pr-9 ${
-                          active ? "bg-teal-50 text-teal-900" : "text-gray-900"
-                        }`
-                      }
-                    >
-                      {({ selected }) => (
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={selected ? "font-medium" : "font-normal"}
-                          >
-                            {country.label}
-                          </span>
-                          {selected && (
-                            <CheckCircle className="text-teal-600" size={16} />
-                          )}
-                        </div>
-                      )}
-                    </Listbox.Option>
-                  ))}
-                </Listbox.Options>
-              </Transition>
+              <input {...register('email', { required: true })} type="email" className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="your.email@company.com" />
+              <EnvelopeSimple className="absolute left-3 top-3.5 text-gray-400" size={18} />
             </div>
-          </Listbox>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            PHONE NUMBER *
-          </label>
-          <div className="relative">
-            <input
-              type="tel"
-              className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
-              placeholder="+1 (555) 123-4567"
-              required
-            />
-            <Phone
-              className="absolute left-3 top-3.5 text-gray-400"
-              size={18}
-            />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            MESSAGE *
-          </label>
-          <div className="relative">
-            <textarea
-              className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200"
-              rows={4}
-              placeholder="Briefly tell us what you have in mind"
-              required
-            />
-            <ChatCircle
-              className="absolute left-3 top-3.5 text-gray-400"
-              size={18}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">FIRST NAME *</label>
+              <input {...register('firstName', { required: true })} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="John" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">LAST NAME *</label>
+              <input {...register('lastName', { required: true })} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="Doe" />
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-start space-x-3">
-          <div className="flex items-center h-5">
-            <input
-              type="checkbox"
-              className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500 focus:ring-2"
-              required
-            />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">COMPANY NAME</label>
+            <input {...register('company')} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="Your Company" />
           </div>
-          <p className="text-xs text-gray-600 leading-relaxed">
-            I UNDERSTAND THAT MODUCODE WILL PROCESS MY INFORMATION IN ACCORDANCE
-            WITH THEIR{" "}
-            <a href="#" className="text-teal-600 underline hover:text-teal-700">
-              TERMS OF USE.
-            </a>{" "}
-            I UNDERSTAND THAT I CAN UNSUBSCRIBE LINKS AT ANY TIME.
-          </p>
-        </div>
 
-        <motion.button
-          type="button"
-          onClick={onSubmit}
-          whileHover={{
-            scale: 1.02,
-            boxShadow: "0 10px 25px rgba(20, 184, 166, 0.15)",
-          }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full bg-gradient-to-r from-teal-600 to-green-700 text-white py-4 font-semibold text-lg transition-all duration-200 shadow-lg border-l-4 border-teal-400"
-        >
-          Book a Call
-        </motion.button>
-      </div>
-    </div>
-  );
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">JOB TITLE</label>
+            <input {...register('jobTitle')} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="e.g. CTO, Engineering Manager" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">COUNTRY</label>
+            <Listbox value={selectedCountry} onChange={setSelectedCountry}>
+              <div className="relative">
+                <Listbox.Button className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none text-left flex items-center justify-between transition-all duration-200">
+                  <span className={selectedCountry === '' ? 'text-gray-500' : 'text-gray-900'}>
+                    {selectedCountry === '' ? 'Select Country' : countries.find((c: Country) => c.value === selectedCountry)?.label}
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <Globe className="text-gray-400" size={18} />
+                    <CaretDown className="text-gray-400" size={18} />
+                  </div>
+                </Listbox.Button>
+                <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                  <Listbox.Options className="absolute z-50 mt-1 w-full bg-white border border-gray-200 shadow-lg max-h-60 overflow-auto">
+                    {countries.map((country: Country) => (
+                      <Listbox.Option key={country.value} value={country.value} className={({ active }: { active: boolean }) => `cursor-pointer select-none relative py-3 pl-4 pr-9 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`}>
+                        {({ selected }: { selected: boolean }) => (
+                          <div className="flex items-center justify-between">
+                            <span className={selected ? 'font-medium' : 'font-normal'}>{country.label}</span>
+                            {selected && <CheckCircle className="text-teal-600" size={16} />}
+                          </div>
+                        )}
+                      </Listbox.Option>
+                    ))}
+                  </Listbox.Options>
+                </Transition>
+              </div>
+            </Listbox>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">PHONE NUMBER</label>
+            <div className="relative">
+              <input {...register('phone')} type="tel" className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="+1 (555) 123-4567" />
+              <Phone className="absolute left-3 top-3.5 text-gray-400" size={18} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">MESSAGE *</label>
+            <div className="relative">
+              <textarea {...register('message', { required: true })} className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" rows={4} placeholder="Briefly tell us what you have in mind" />
+              <ChatCircle className="absolute left-3 top-3.5 text-gray-400" size={18} />
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <div className="flex items-center h-5">
+              <input {...register('consent', { required: true })} type="checkbox" className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500 focus:ring-2" />
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">I UNDERSTAND THAT MODUCODE WILL PROCESS MY INFORMATION IN ACCORDANCE WITH THEIR <a href="#" className="text-teal-600 underline hover:text-teal-700">TERMS OF USE.</a> I UNDERSTAND THAT I CAN UNSUBSCRIBE LINKS AT ANY TIME.</p>
+          </div>
+
+          <div>
+            <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} disabled={submitting} className="w-full bg-gradient-to-r from-teal-600 to-green-700 text-white py-4 font-semibold text-lg transition-all duration-200 shadow-lg border-l-4 border-teal-400 disabled:opacity-60">
+              {submitting ? 'Sending…' : 'Book a Call'}
+            </motion.button>
+          </div>
+
+          {submitResult?.ok && <div className="text-sm text-green-600">Thanks — your message was sent. We will respond shortly.</div>}
+          {submitResult?.error && <div className="text-sm text-red-600">Error: {submitResult.error}</div>}
+        </div>
+      </form>
+    );
+  };
 
   return (
     <main className="min-h-screen bg-white text-gray-900 font-sans">
@@ -768,6 +733,60 @@ are ready to power your next big project.
           animation-delay: 4s;
         }
       `}</style>
+      {/* Calendly embed modal */}
+      {showCalendlyModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white w-[90%] max-w-3xl h-[80vh] relative rounded-lg overflow-hidden">
+            <button onClick={() => setShowCalendlyModal(false)} className="absolute right-3 top-3 z-50 bg-white rounded-full p-2 shadow">
+              <X size={20} />
+            </button>
+            <div id="calendly-embed" className="w-full h-full">
+              {/* Calendly inline widget will be loaded here */}
+            </div>
+          </div>
+        </div>
+      )}
+      <script dangerouslySetInnerHTML={{ __html: `
+        (function(){
+          var calendlyScriptLoaded = false;
+          function loadScript(cb){
+            if (window.Calendly){ calendlyScriptLoaded = true; return cb(); }
+            if (calendlyScriptLoaded) return setTimeout(cb, 200);
+            calendlyScriptLoaded = true;
+            var s = document.createElement('script');
+            s.src = 'https://assets.calendly.com/assets/external/widget.js';
+            s.async = true;
+            s.onload = cb;
+            document.head.appendChild(s);
+          }
+
+          window.addEventListener('contact_form_submit', function(e){
+            try{
+              var detail = e && e.detail ? e.detail : {};
+              var link = '${process.env.NEXT_PUBLIC_CALENDLY_LINK || ''}';
+              if (!link) return;
+              loadScript(function(){
+                try{
+                  var container = document.getElementById('calendly-embed');
+                  if (!container) return;
+                  container.innerHTML = '';
+                  var prefill = {};
+                  if (detail && detail.payload){
+                    var p = detail.payload;
+                    prefill = {
+                      name: ((p.firstName||'') + ' ' + (p.lastName||'')).trim(),
+                      email: p.email || undefined
+                    };
+                  }
+                  if (window.Calendly && typeof window.Calendly.initInlineWidget === 'function'){
+                    window.Calendly.initInlineWidget({ url: link, parentElement: container, prefill: prefill, utm: {} });
+                  }
+                }catch(err){console.error(err)}
+              });
+            }catch(err){console.error(err)}
+          });
+        })();
+      `}} />
     </main>
   );
 }
