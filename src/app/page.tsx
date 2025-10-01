@@ -74,6 +74,14 @@ export default function Home() {
     const onChange = () => setTheme(mq.matches ? 'dark' : 'light');
     try { mq.addEventListener('change', onChange); } catch { /* ignore legacy */ }
     setTheme(mq.matches ? 'dark' : 'light');
+    // expose detected value for debugging and ensure nav has data-theme attribute
+    try {
+      const nav = document.querySelector('nav');
+      if (nav) {
+        nav.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
+      }
+    } catch {}
+    console.debug('[theme] prefers-color-scheme dark:', mq.matches);
     return () => { try { mq.removeEventListener('change', onChange); } catch {} };
   }, []);
 
