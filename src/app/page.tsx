@@ -270,17 +270,17 @@ export default function Home() {
       }`}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center">
-            {/* Render both logos and let CSS/media queries decide which to show.
-                This avoids hydration mismatch and keeps `next/image` optimizations. */}
+            {/* Render both logos (plain <img>) and let CSS/media queries decide which to show.
+                Using plain <img> here avoids potential next/image wrapper class mismatch for visibility rules. */}
             <Link href="/" className="relative">
-              <Image
+              <img
                 src="/images/logo-dark.png"
                 alt="Moducode Logo (dark)"
                 width={150}
                 height={150}
                 className="logo-dark rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
               />
-              <Image
+              <img
                 src="/images/logo-light.png"
                 alt="Moducode Logo (light)"
                 width={150}
