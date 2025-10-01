@@ -33,6 +33,8 @@ body {
 }
 
 /* Logo visibility helpers: hide or show by default; media queries and scrolled state control visibility */
+/* Ensure logos occupy layout space consistently */
+.logo-light, .logo-dark { display: inline-block; vertical-align: middle; }
 .logo-light { display: none; }
 .logo-dark { display: inline-block; }
 
@@ -42,5 +44,5 @@ body {
 }
 
 /* When navbar is scrolled we ensure dark background; show light logo for contrast */
-.scrolled .logo-light { display: inline-block !important; }
-.scrolled .logo-dark { display: none !important; }
+nav.scrolled .logo-light { display: inline-block !important; }
+nav.scrolled .logo-dark { display: none !important; }

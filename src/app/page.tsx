@@ -84,6 +84,17 @@ export default function Home() {
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
 
+  // Smooth scroll helper for in-page anchors. On mobile we close the menu first
+  // then scroll after a short delay so the nav overlay doesn't block the target.
+  const scrollToTestimonials = (closeMenu = true) => {
+    if (closeMenu) setIsMenuOpen(false);
+    const el = typeof document !== 'undefined' ? document.getElementById('testimonials') : null;
+    if (el) {
+      // wait a tick for the mobile menu to collapse/animate
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    }
+  };
+
   const testimonials = [
     {
       name: "Aggie B.",
@@ -270,9 +281,8 @@ export default function Home() {
       }`}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center">
-            {/* Render both logos (plain <img>) and let CSS/media queries decide which to show.
-                Using plain <img> here avoids potential next/image wrapper class mismatch for visibility rules. */}
-            <Link href="/" className="relative">
+            {/* Logo wrapper: ensure both images are plain <img> descendants of the nav so .scrolled selectors match */}
+            <Link href="/" className="logo-wrapper relative flex items-center">
               <img
                 src="/images/logo-dark.png"
                 alt="Moducode Logo (dark)"
@@ -285,7 +295,7 @@ export default function Home() {
                 alt="Moducode Logo (light)"
                 width={150}
                 height={150}
-                className="logo-light rounded-lg cursor-pointer hover:opacity-90 transition-opacity absolute inset-0"
+                className="logo-light rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
               />
             </Link>
           </div>
@@ -335,7 +345,10 @@ export default function Home() {
                   className={`block font-medium py-2 text-lg ${
                     isScrolled ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-teal-600'
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToTestimonials(true);
+                  }}
                 >
                   Why Moducode?
                 </a>
