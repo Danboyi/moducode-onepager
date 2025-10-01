@@ -59,6 +59,8 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  
+
   // React country list
   type Country = { label: string; value: string };
   const countries: Country[] = useMemo(() => countryList().getData(), []);
@@ -263,23 +265,28 @@ export default function Home() {
       {/* Navigation with Logo and Why Moducode Link */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         isScrolled 
-          ? 'bg-gray-900/95 backdrop-blur-sm shadow-lg' 
+          ? 'bg-gray-900/95 backdrop-blur-sm shadow-lg scrolled' 
           : 'bg-white/95 backdrop-blur-sm border-b border-gray-100'
       }`}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center">
-            {/* Logo respects system dark mode */}
-            <Link href="/">
-              <picture>
-                <source srcSet="/images/logo-light.png" media="(prefers-color-scheme: dark)" />
-                <img
-                  src="/images/logo-dark.png"
-                  alt="Moducode Logo"
-                  width={150}
-                  height={150}
-                  className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                />
-              </picture>
+            {/* Render both logos and let CSS/media queries decide which to show.
+                This avoids hydration mismatch and keeps `next/image` optimizations. */}
+            <Link href="/" className="relative">
+              <Image
+                src="/images/logo-dark.png"
+                alt="Moducode Logo (dark)"
+                width={150}
+                height={150}
+                className="logo-dark rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+              />
+              <Image
+                src="/images/logo-light.png"
+                alt="Moducode Logo (light)"
+                width={150}
+                height={150}
+                className="logo-light rounded-lg cursor-pointer hover:opacity-90 transition-opacity absolute inset-0"
+              />
             </Link>
           </div>
 

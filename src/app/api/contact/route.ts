@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail({
       from: emailFrom,
       to,
-      subject: `Website contact form — ${body.firstName} ${body.lastName}`,
+      subject: `Moducode call booking submission — ${body.firstName} ${body.lastName}`,
       text: `${body.message}\n\n--\nFrom: ${body.firstName} ${body.lastName} <${body.email}>\nCompany: ${body.company || 'N/A'}\nJob Title: ${body.jobTitle || 'N/A'}\nCountry: ${body.country || 'N/A'}\nPhone: ${body.phone || 'N/A'}`,
       html,
     });

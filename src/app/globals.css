@@ -31,3 +31,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Logo visibility helpers: hide or show by default; media queries and scrolled state control visibility */
+.logo-light { display: none; }
+.logo-dark { display: inline-block; }
+
+@media (prefers-color-scheme: dark) {
+  .logo-light { display: inline-block; }
+  .logo-dark { display: none; }
+}
+
+/* When navbar is scrolled we ensure dark background; show light logo for contrast */
+.scrolled .logo-light { display: inline-block !important; }
+.scrolled .logo-dark { display: none !important; }
