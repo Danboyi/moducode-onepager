@@ -12,6 +12,11 @@ type FormData = {
   message: string;
 };
 
+// Simple in-memory rate limiter (best-effort). Note: in serverless deployments memory may not persist between invocations.
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT_MAX = 5;
+const ipRequestLog: Map<string, { count: number; windowStart: number }> = new Map();
+
 const getTransport = () => {
   // Reads SMTP credentials from environment variables.
   const host = process.env.SMTP_HOST;
@@ -39,15 +44,31 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Partial<FormData>;
 
+    // Rate limiting by IP (best-effort). Try to read x-forwarded-for or fallback to connection ip.
+  const forwarded = req.headers.get('x-forwarded-for') || '';
+  const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+    const now = Date.now();
+    const entry = ipRequestLog.get(ip);
+    if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+      ipRequestLog.set(ip, { count: 1, windowStart: now });
+    } else {
+      entry.count += 1;
+      ipRequestLog.set(ip, entry);
+      if (entry.count > RATE_LIMIT_MAX) {
+        return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+      }
+    }
+
     // basic validation
     if (!body || !body.email || !body.firstName || !body.message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const transporter = getTransport();
-
-    const emailFrom = process.env.EMAIL_FROM || body.email;
-    const to = process.env.CONTACT_EMAIL || 'contact@moducode.com';
+      // Use a verified sender address for the From header (from env); set replyTo to the user so replies go to them
+      const emailFrom = process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@moducode.com';
+      const replyTo = body.email;
+      const to = process.env.CONTACT_EMAIL || 'contact@moducode.com';
 
     const html = `
       <h2>New contact form submission</h2>
@@ -63,6 +84,7 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail({
       from: emailFrom,
       to,
+      replyTo,
       subject: `Moducode call booking submission — ${body.firstName} ${body.lastName}`,
       text: `${body.message}\n\n--\nFrom: ${body.firstName} ${body.lastName} <${body.email}>\nCompany: ${body.company || 'N/A'}\nJob Title: ${body.jobTitle || 'N/A'}\nCountry: ${body.country || 'N/A'}\nPhone: ${body.phone || 'N/A'}`,
       html,

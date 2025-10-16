@@ -1,11 +1,9 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { Listbox, Transition } from "@headlessui/react";
-import { Fragment, useState, useMemo, useEffect } from "react";
-import countryList from 'react-select-country-list';
+import { useState, useMemo, useEffect } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -29,6 +27,7 @@ import {
   InstagramLogo,
   YoutubeLogo,
 } from "phosphor-react";
+import ContactForm from '../components/ContactForm';
 
 export default function Home() {
   type FormPayload = {
@@ -181,9 +180,7 @@ export default function Home() {
 
   
 
-  // React country list
-  type Country = { label: string; value: string };
-  const countries: Country[] = useMemo(() => countryList().getData(), []);
+  // country select handled inside ContactForm component
 
   // Intersection Observer hooks for scroll animations
   const [heroRef, heroInView] = useInView({
@@ -230,169 +227,41 @@ export default function Home() {
     },
   ];
 
-  const [submitting, setSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<null | { ok?: boolean; error?: string }>(null);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
+  const [calendlyLoading, setCalendlyLoading] = useState(false);
 
-  const FormComponent = ({ isModal = false }: { isModal?: boolean }) => {
-    const { register, handleSubmit, reset } = useForm<FormPayload>();
-    const [selectedCountry, setSelectedCountry] = useState("");
-
-    const onSubmitForm = async (data: FormPayload) => {
-      setSubmitting(true);
-      setSubmitResult(null);
-      try {
-        const payload: FormPayload = {
-          email: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          company: data.company,
-          jobTitle: data.jobTitle,
-          country: selectedCountry || data.country,
-          phone: data.phone,
-          message: data.message,
-        };
-
-        const res = await fetch('/api/contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        const json = await res.json();
-        if (res.ok) {
-          setSubmitResult({ ok: true });
-          reset();
-          setSelectedCountry('');
-          const calendly = process.env.NEXT_PUBLIC_CALENDLY_LINK || '';
-          if (calendly) {
-            // fire analytics event if available
-            try {
-              const eventData = { category: 'Contact', action: 'submit', label: payload.email, payload };
-              const w = window as unknown as Record<string, unknown>;
-              if (Array.isArray(w['dataLayer'])) {
-                (w['dataLayer'] as unknown[]).push({ event: 'contact_form_submit', ...eventData });
-              }
-              if (typeof w['gtag'] === 'function') {
-                (w['gtag'] as (...args: unknown[]) => void)('event', 'contact_form_submit', eventData);
-              }
-              window.dispatchEvent(new CustomEvent('contact_form_submit', { detail: eventData }));
-            } catch {
-              // ignore analytics errors
-            }
-
-            // show embedded Calendly modal
-            setShowCalendlyModal(true);
-          }
-        } else {
-          setSubmitResult({ error: json.error || 'Failed to send message' });
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setSubmitResult({ error: message || 'Unexpected error' });
-      } finally {
-        setSubmitting(false);
-      }
-    };
-
-    return (
-      <form onSubmit={handleSubmit(onSubmitForm)} className={`${isModal ? '' : 'bg-white p-8 shadow-xl border-l-4 border-teal-500'}`}>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">WORK EMAIL *</label>
-            <div className="relative">
-              <input {...register('email', { required: true })} type="email" className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="your.email@company.com" />
-              <EnvelopeSimple className="absolute left-3 top-3.5 text-gray-400" size={18} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">FIRST NAME *</label>
-              <input {...register('firstName', { required: true })} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="John" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">LAST NAME *</label>
-              <input {...register('lastName', { required: true })} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="Doe" />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">COMPANY NAME</label>
-            <input {...register('company')} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="Your Company" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">JOB TITLE</label>
-            <input {...register('jobTitle')} type="text" className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="e.g. CTO, Engineering Manager" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">COUNTRY</label>
-            <Listbox value={selectedCountry} onChange={setSelectedCountry}>
-              <div className="relative">
-                <Listbox.Button className="w-full p-3 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none text-left flex items-center justify-between transition-all duration-200">
-                  <span className={selectedCountry === '' ? 'text-gray-500' : 'text-gray-900'}>
-                    {selectedCountry === '' ? 'Select Country' : countries.find((c: Country) => c.value === selectedCountry)?.label}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <Globe className="text-gray-400" size={18} />
-                    <CaretDown className="text-gray-400" size={18} />
-                  </div>
-                </Listbox.Button>
-                <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                  <Listbox.Options className="absolute z-50 mt-1 w-full bg-white border border-gray-200 shadow-lg max-h-60 overflow-auto">
-                    {countries.map((country: Country) => (
-                      <Listbox.Option key={country.value} value={country.value} className={({ active }: { active: boolean }) => `cursor-pointer select-none relative py-3 pl-4 pr-9 ${active ? 'bg-teal-50 text-teal-900' : 'text-gray-900'}`}>
-                        {({ selected }: { selected: boolean }) => (
-                          <div className="flex items-center justify-between">
-                            <span className={selected ? 'font-medium' : 'font-normal'}>{country.label}</span>
-                            {selected && <CheckCircle className="text-teal-600" size={16} />}
-                          </div>
-                        )}
-                      </Listbox.Option>
-                    ))}
-                  </Listbox.Options>
-                </Transition>
-              </div>
-            </Listbox>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">PHONE NUMBER</label>
-            <div className="relative">
-              <input {...register('phone')} type="tel" className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" placeholder="+1 (555) 123-4567" />
-              <Phone className="absolute left-3 top-3.5 text-gray-400" size={18} />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">MESSAGE *</label>
-            <div className="relative">
-              <textarea {...register('message', { required: true })} className="w-full p-3 pl-10 border-b-2 border-gray-200 bg-transparent focus:border-teal-500 focus:outline-none transition-all duration-200" rows={4} placeholder="Briefly tell us what you have in mind" />
-              <ChatCircle className="absolute left-3 top-3.5 text-gray-400" size={18} />
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-3">
-            <div className="flex items-center h-5">
-              <input {...register('consent', { required: true })} type="checkbox" className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500 focus:ring-2" />
-            </div>
-            <p className="text-xs text-gray-600 leading-relaxed">I UNDERSTAND THAT MODUCODE WILL PROCESS MY INFORMATION IN ACCORDANCE WITH THEIR <a href="#" className="text-teal-600 underline hover:text-teal-700">TERMS OF USE.</a> I UNDERSTAND THAT I CAN UNSUBSCRIBE LINKS AT ANY TIME.</p>
-          </div>
-
-          <div>
-            <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} disabled={submitting} className="w-full bg-gradient-to-r from-teal-600 to-green-700 text-white py-4 font-semibold text-lg transition-all duration-200 shadow-lg border-l-4 border-teal-400 disabled:opacity-60">
-              {submitting ? 'Sending…' : 'Book a Call'}
-            </motion.button>
-          </div>
-
-          {submitResult?.ok && <div className="text-sm text-green-600">Thanks — your message was sent. We will respond shortly.</div>}
-          {submitResult?.error && <div className="text-sm text-red-600">Error: {submitResult.error}</div>}
-        </div>
-      </form>
-    );
+  type FormPayloadMinimal = {
+    email: string;
+    firstName: string;
+    lastName: string;
   };
+
+  const onFormSuccess = (payload: FormPayloadMinimal) => {
+    const calendly = process.env.NEXT_PUBLIC_CALENDLY_LINK || '';
+    if (calendly) setShowCalendlyModal(true);
+    try {
+      // Delay dispatch slightly so the modal and embed container exists
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('contact_form_submit', { detail: { payload } }));
+      }, 200);
+    } catch {}
+  };
+
+  // Listen for custom events from the Calendly embed script so we can show/hide a loading spinner
+  useEffect(() => {
+    const onLoading = () => setCalendlyLoading(true);
+    const onReady = () => setCalendlyLoading(false);
+    try {
+      window.addEventListener('calendly_widget_loading', onLoading);
+      window.addEventListener('calendly_widget_ready', onReady);
+    } catch {}
+    return () => {
+      try {
+        window.removeEventListener('calendly_widget_loading', onLoading);
+        window.removeEventListener('calendly_widget_ready', onReady);
+      } catch {}
+    };
+  }, []);
 
   return (
     <main className="min-h-screen bg-white text-gray-900 font-sans">
@@ -406,19 +275,21 @@ export default function Home() {
           <div className="flex items-center">
             {/* Logo wrapper: ensure both images are plain <img> descendants of the nav so .scrolled selectors match */}
             <Link href="/" className="logo-wrapper relative flex items-center">
-              <img
+              <Image
                 src="/images/logo-dark.png"
                 alt="Moducode Logo (dark)"
                 width={150}
                 height={150}
                 className="logo-dark rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                priority
               />
-              <img
+              <Image
                 src="/images/logo-light.png"
                 alt="Moducode Logo (light)"
                 width={150}
                 height={150}
                 className="logo-light rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                priority
               />
             </Link>
           </div>
@@ -517,7 +388,7 @@ export default function Home() {
                   <X size={24} />
                 </button>
               </div>
-              <FormComponent isModal={true} />
+              <ContactForm isModal={true} onSuccess={onFormSuccess} />
             </motion.div>
           </motion.div>
         )}
@@ -593,7 +464,7 @@ are ready to power your next big project.
               className="flex justify-start"
             >
               <div className="w-full max-w-md">
-                <FormComponent />
+                <ContactForm onSuccess={onFormSuccess} />
               </div>
             </motion.div>
           </div>
@@ -866,6 +737,12 @@ are ready to power your next big project.
             <button onClick={() => setShowCalendlyModal(false)} className="absolute right-3 top-3 z-50 bg-white rounded-full p-2 shadow">
               <X size={20} />
             </button>
+            <div className="absolute inset-0 flex items-center justify-center" style={{ display: calendlyLoading ? 'flex' : 'none' }}>
+              <div className="text-center">
+                <div className="animate-spin h-10 w-10 border-4 border-teal-600 border-t-transparent rounded-full mx-auto mb-4" />
+                <div className="text-sm text-gray-700">Loading scheduling widget…</div>
+              </div>
+            </div>
             <div id="calendly-embed" className="w-full h-full">
               {/* Calendly inline widget will be loaded here */}
             </div>
@@ -905,7 +782,9 @@ are ready to power your next big project.
                     };
                   }
                   if (window.Calendly && typeof window.Calendly.initInlineWidget === 'function'){
+                    try { window.dispatchEvent(new CustomEvent('calendly_widget_loading')); } catch {}
                     window.Calendly.initInlineWidget({ url: link, parentElement: container, prefill: prefill, utm: {} });
+                    try { window.dispatchEvent(new CustomEvent('calendly_widget_ready')); } catch {}
                   }
                 }catch(err){console.error(err)}
               });
