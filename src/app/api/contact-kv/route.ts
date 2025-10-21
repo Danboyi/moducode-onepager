@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     const submission: FormData = {
       email: body.email,
       firstName: body.firstName,
-      lastName: body.lastName,
+      lastName: body.lastName || '',
       company: body.company || '',
       jobTitle: body.jobTitle || '',
       country: body.country || '',
