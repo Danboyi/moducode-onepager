@@ -37,6 +37,14 @@ const getTransport = () => {
       user,
       pass,
     },
+    // Add connection timeout and retry options
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 5000,    // 5 seconds
+    socketTimeout: 10000,     // 10 seconds
+    // For Gmail and other providers that require TLS
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 };
 
@@ -93,7 +101,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('Contact API error', err);
-    const message = err instanceof Error ? err.message : 'Server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    
+    // Provide more specific error messages
+    let message = 'Server error';
+    let status = 500;
+    
+    if (err instanceof Error) {
+      if (err.message.includes('ETIMEDOUT') || err.message.includes('ECONNREFUSED')) {
+        message = 'Email service temporarily unavailable. Please try again later.';
+        status = 503;
+      } else if (err.message.includes('Missing SMTP configuration')) {
+        message = 'Email service not configured. Please contact support.';
+        status = 500;
+      } else if (err.message.includes('authentication')) {
+        message = 'Email authentication failed. Please contact support.';
+        status = 500;
+      } else {
+        message = err.message;
+      }
+    }
+    
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -237,14 +237,27 @@ export default function Home() {
   };
 
   const onFormSuccess = (payload: FormPayloadMinimal) => {
+    console.log('Form submitted successfully, payload:', payload);
+    
+    // Check if Calendly link is configured
     const calendly = process.env.NEXT_PUBLIC_CALENDLY_LINK || '';
-    if (calendly) setShowCalendlyModal(true);
+    console.log('Calendly link:', calendly);
+    
+    if (calendly) {
+      console.log('Showing Calendly modal');
+      setShowCalendlyModal(true);
+    } else {
+      console.log('No Calendly link configured');
+    }
+    
     try {
       // Delay dispatch slightly so the modal and embed container exists
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('contact_form_submit', { detail: { payload } }));
       }, 200);
-    } catch {}
+    } catch (err) {
+      console.error('Error dispatching contact form event:', err);
+    }
   };
 
   // Listen for custom events from the Calendly embed script so we can show/hide a loading spinner
@@ -743,9 +756,24 @@ are ready to power your next big project.
                 <div className="text-sm text-gray-700">Loading scheduling widget…</div>
               </div>
             </div>
-            <div id="calendly-embed" className="w-full h-full">
-              {/* Calendly inline widget will be loaded here */}
-            </div>
+            {process.env.NEXT_PUBLIC_CALENDLY_LINK ? (
+              <div id="calendly-embed" className="w-full h-full">
+                {/* Calendly inline widget will be loaded here */}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center p-8">
+                  <h3 className="text-xl font-semibold mb-4">Thank you for your submission!</h3>
+                  <p className="text-gray-600 mb-4">We'll be in touch soon to schedule a call.</p>
+                  <button 
+                    onClick={() => setShowCalendlyModal(false)}
+                    className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "src/app/api/contact/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/contact-db/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/contact-resend/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
