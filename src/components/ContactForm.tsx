@@ -57,22 +57,12 @@ export default function ContactForm({ isModal = false, onSuccess }: Props) {
         message: data.message,
       };
 
-      // Try database endpoint first (most reliable), fallback to SMTP
-      let res;
-      try {
-        res = await fetch('/api/contact-db', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } catch (error) {
-        console.log('Database endpoint failed, trying SMTP:', error);
-        res = await fetch('/api/contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
+      // Use unified endpoint that handles both KV storage and email sending
+      const res = await fetch('/api/contact-unified', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
       const json = await res.json();
       if (res.ok) {
